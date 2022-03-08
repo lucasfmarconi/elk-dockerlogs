@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3.8"
 services:
   elasticsearch:
     build:
@@ -37,6 +37,29 @@ services:
       - elk_stack
     depends_on:
       - elasticsearch
+  metricbeat:
+    container_name: metricbeat
+    image: docker.elastic.co/beats/metricbeat:8.0.1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - elk_stack
+    depends_on:
+      - elasticsearch
+    command: metricbeat -e -E output.elasticsearch.hosts=["elasticsearch:9200"]
+  filebeat:
+    build:
+      context: filebeat/
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers
+    command: filebeat -e -strict.perms=false
+    networks:
+      - elk_stack
+    depends_on:
+      - elasticsearch
+      - logstash
 networks:
   elk_stack:
     driver: bridge
